@@ -1,679 +1,1080 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>NovaCode · Modern Code Editor with Piston Engine</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>CodeRunner Pro | Real Code Compilation & Execution</title>
+    <!-- Monaco Editor -->
+    <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/editor/editor.main.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    body {
-      background: linear-gradient(145deg, #0a0c12 0%, #0f1117 100%);
-      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, 'SF Mono', 'Fira Code', monospace;
-      height: 100vh;
-      overflow: hidden;
-      color: #e3e6f0;
-    }
+        body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', monospace;
+            background: #1e1e2e;
+            color: #cccccc;
+        }
 
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #1e212a;
-      border-radius: 10px;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #3b3f4f;
-      border-radius: 10px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #5f6a8a;
-    }
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100%;
+        }
 
-    .app-container {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
+        .main-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+        }
 
-    .top-bar {
-      background: rgba(18, 22, 30, 0.95);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(72, 85, 106, 0.4);
-      padding: 0.75rem 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 1rem;
-      z-index: 10;
-    }
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: #252526;
+            border-right: 1px solid #3e3e42;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
 
-    .logo-area {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-    }
-    .logo-icon {
-      font-size: 1.8rem;
-    }
-    .logo-text {
-      font-weight: 700;
-      font-size: 1.35rem;
-      letter-spacing: -0.3px;
-      background: linear-gradient(135deg, #c0e0ff, #a07eff);
-      background-clip: text;
-      -webkit-background-clip: text;
-      color: transparent;
-    }
-    .badge {
-      background: #262b38;
-      padding: 0.2rem 0.7rem;
-      border-radius: 40px;
-      font-size: 0.7rem;
-      font-family: monospace;
-      border: 1px solid #3e4357;
-    }
+        .sidebar-header {
+            padding: 16px 18px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #bbbbbb;
+            border-bottom: 1px solid #3e3e42;
+            background: #2d2d30;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-    .controls {
-      display: flex;
-      gap: 0.75rem;
-      align-items: center;
-      flex-wrap: wrap;
-    }
+        .module-list {
+            list-style: none;
+            padding: 8px 0;
+            flex: 1;
+        }
 
-    select, button, .save-status, .api-mode {
-      background: #13161f;
-      border: 1px solid #2e3347;
-      padding: 0.5rem 1rem;
-      border-radius: 14px;
-      color: #f0f3fc;
-      font-weight: 500;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-family: 'Inter', monospace;
-    }
-    .api-mode {
-      cursor: default;
-      background: #1a1e2a;
-      font-size: 0.75rem;
-    }
-    select {
-      background: #0f121b;
-      cursor: pointer;
-    }
-    button {
-      background: #202530;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-    }
-    button:hover {
-      background: #2c3342;
-      border-color: #5f6e92;
-      transform: translateY(-1px);
-    }
-    .run-btn {
-      background: #2d4a6e;
-      border-color: #3b6e9e;
-      color: white;
-      font-weight: 700;
-    }
-    .run-btn:hover {
-      background: #3a6190;
-      border-color: #5c8bc0;
-      box-shadow: 0 4px 12px rgba(46, 91, 145, 0.3);
-    }
-    .save-status {
-      background: #1b1e2a;
-      cursor: default;
-      font-size: 0.75rem;
-      padding: 0.3rem 1rem;
-    }
+        .module-item {
+            padding: 8px 12px;
+            margin: 2px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: 0.1s linear;
+            position: relative;
+        }
 
-    .main-workspace {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-      padding: 1rem;
-      gap: 1rem;
-      min-height: 0;
-    }
+        .module-item:hover {
+            background: #2a2d2e;
+        }
 
-    .editor-pane {
-      flex: 2;
-      display: flex;
-      flex-direction: column;
-      background: #0e1119;
-      border-radius: 1.5rem;
-      border: 1px solid #252b3a;
-      overflow: hidden;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-    }
+        .module-item.active {
+            background: #094771;
+            color: white;
+        }
 
-    .pane-header {
-      background: #141823;
-      padding: 0.7rem 1.2rem;
-      font-size: 0.8rem;
-      font-weight: 600;
-      border-bottom: 1px solid #252b3a;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+        .module-name {
+            flex: 1;
+            cursor: pointer;
+            outline: none;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
 
-    .filename-badge {
-      font-family: monospace;
-      background: #1f2538;
-      padding: 0.2rem 0.7rem;
-      border-radius: 20px;
-      font-size: 0.7rem;
-    }
+        .module-name.editing {
+            background: #3c3c3c;
+            color: white;
+        }
 
-    #codeEditor {
-      width: 100%;
-      flex: 1;
-      background: #0a0c14;
-      color: #eef4ff;
-      border: none;
-      outline: none;
-      resize: none;
-      font-family: 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
-      font-size: 14px;
-      line-height: 1.55;
-      padding: 1.2rem;
-      tab-size: 4;
-    }
+        .module-name[contenteditable="true"] {
+            background: #3c3c3c;
+            color: white;
+            outline: 1px solid #0e639c;
+        }
 
-    .output-pane {
-      flex: 1.2;
-      display: flex;
-      flex-direction: column;
-      background: #0e1119;
-      border-radius: 1.5rem;
-      border: 1px solid #252b3a;
-      overflow: hidden;
-    }
+        .delete-module {
+            opacity: 0;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0 4px;
+            border-radius: 3px;
+            transition: 0.1s;
+        }
 
-    .output-header {
-      background: #141823;
-      padding: 0.7rem 1.2rem;
-      font-size: 0.8rem;
-      font-weight: 600;
-      border-bottom: 1px solid #252b3a;
-      display: flex;
-      gap: 12px;
-    }
-    .output-tab {
-      cursor: pointer;
-      padding: 0.2rem 0;
-      opacity: 0.7;
-      transition: 0.1s;
-      border-bottom: 2px solid transparent;
-    }
-    .output-tab.active {
-      opacity: 1;
-      border-bottom-color: #5e8cd9;
-      color: white;
-    }
-    #outputArea {
-      flex: 1;
-      background: #05070e;
-      padding: 1rem;
-      font-family: 'Fira Code', monospace;
-      font-size: 13px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
+        .module-item:hover .delete-module {
+            opacity: 0.7;
+        }
 
-    .status-line {
-      background: #0b0e16;
-      border-top: 1px solid #202430;
-      padding: 0.45rem 1rem;
-      font-size: 0.7rem;
-      display: flex;
-      gap: 1rem;
-      color: #9aa2c0;
-    }
+        .delete-module:hover {
+            opacity: 1 !important;
+            background: #f48771;
+            color: white;
+        }
 
-    .api-config {
-      background: #0b0e16;
-      padding: 0.5rem 1rem;
-      border-radius: 12px;
-      display: flex;
-      gap: 0.5rem;
-      align-items: center;
-    }
-    #apiEndpointInput {
-      background: #1a1e2a;
-      border: 1px solid #2e3347;
-      padding: 0.3rem 0.7rem;
-      border-radius: 8px;
-      color: white;
-      font-size: 0.75rem;
-      width: 220px;
-    }
+        .add-module-btn {
+            margin: 16px 12px;
+            padding: 8px 12px;
+            background: #0e639c;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
 
-    @media (max-width: 780px) {
-      .main-workspace {
-        flex-direction: column;
-      }
-      .top-bar {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .controls {
-        justify-content: space-between;
-      }
-    }
-  </style>
+        .add-module-btn:hover {
+            background: #1177bb;
+        }
+
+        /* Editor Area */
+        .editor-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1e1e1e;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            background: #2d2d30;
+            padding: 8px 16px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            border-bottom: 1px solid #3e3e42;
+            flex-wrap: wrap;
+        }
+
+        .lang-selector {
+            background: #3c3c3c;
+            border: 1px solid #555;
+            padding: 6px 12px;
+            border-radius: 6px;
+            color: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        button {
+            background: #0e639c;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        button:hover:not(:disabled) {
+            background: #1177bb;
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .reset-btn {
+            background: #5a5a5a;
+        }
+        .reset-btn:hover:not(:disabled) {
+            background: #6e6e6e;
+        }
+
+        .run-btn {
+            background: #2c6e2c;
+        }
+        .run-btn:hover:not(:disabled) {
+            background: #3e8e3e;
+        }
+
+        #monaco-editor {
+            flex: 1;
+            min-height: 0;
+            width: 100%;
+        }
+
+        /* Console Panel */
+        .console-panel {
+            background: #1e1e1e;
+            border-top: 1px solid #3e3e42;
+            height: 250px;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .console-header {
+            background: #2d2d30;
+            padding: 6px 16px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .console-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            background: #0f0f0f;
+            color: #d4d4d4;
+        }
+
+        .error-text { color: #f48771; }
+        .success-text { color: #6a9955; }
+        .info-text { color: #9cdcfe; }
+        .output-text { color: #ce9178; }
+
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: #3c3c3c;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2d2d30;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #5a5a5a;
+            border-radius: 6px;
+        }
+
+        @media (max-width: 700px) {
+            .sidebar { width: 240px; }
+        }
+    </style>
 </head>
 <body>
 <div class="app-container">
-  <div class="top-bar">
-    <div class="logo-area">
-      <span class="logo-icon">⚡</span>
-      <span class="logo-text">NovaCode</span>
-      <span class="badge">piston v2</span>
-    </div>
-    <div class="controls">
-      <div class="api-config">
-        <span style="font-size:0.7rem;">🔌 API:</span>
-        <input type="text" id="apiEndpointInput" placeholder="http://localhost:2000/api/v2/execute" value="http://localhost:2000/api/v2/execute">
-        <button id="testApiBtn" style="padding:0.3rem 0.7rem; font-size:0.7rem;">Test</button>
-      </div>
-      <select id="languageSelect">
-        <option value="python">🐍 Python 3.10+</option>
-        <option value="javascript">🟨 JavaScript (Node.js)</option>
-        <option value="typescript">🔷 TypeScript (ts-node)</option>
-        <option value="rust">🦀 Rust (stable)</option>
-        <option value="c_cpp">⚙️ C++ (GCC)</option>
-        <option value="java">☕ Java 17</option>
-        <option value="bash">🐚 Bash</option>
-      </select>
-      <select id="versionSelect">
-        <option value="auto">🔄 auto (latest)</option>
-      </select>
-      <button id="runButton" class="run-btn">▶ RUN CODE</button>
-      <button id="saveCodeBtn">💾 Save</button>
-      <div class="save-status" id="saveStatusMsg">✨ ready</div>
-    </div>
-  </div>
+    <div class="main-layout">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                📁 MODULES
+                <span style="font-size: 11px;">✏️ click name to edit</span>
+            </div>
+            <ul class="module-list" id="moduleList"></ul>
+            <button id="addModuleBtn" class="add-module-btn">➕ New Module</button>
+        </div>
 
-  <div class="main-workspace">
-    <div class="editor-pane">
-      <div class="pane-header">
-        <span>📄 editor</span>
-        <span class="filename-badge" id="filenameHint">code_editor</span>
-      </div>
-      <textarea id="codeEditor" spellcheck="false" placeholder="Write your code here..."></textarea>
+        <div class="editor-area">
+            <div class="toolbar">
+                <select id="languageSelect" class="lang-selector">
+                    <option value="python">🐍 Python 3</option>
+                    <option value="javascript">🟨 JavaScript (Node.js)</option>
+                    <option value="java">☕ Java</option>
+                    <option value="cpp">⚙️ C++</option>
+                    <option value="c">🔵 C</option>
+                    <option value="rust">🦀 Rust</option>
+                </select>
+                <button id="runCodeBtn" class="run-btn">▶ Run Code (Ctrl+Enter)</button>
+                <button id="resetCodeBtn" class="reset-btn">⟳ Reset to Template</button>
+                <span id="apiStatus" class="status-badge">🔄 Checking API...</span>
+            </div>
+            <div id="monaco-editor"></div>
+        </div>
     </div>
-    <div class="output-pane">
-      <div class="output-header">
-        <div class="output-tab active" data-tab="output">📟 Output</div>
-        <div class="output-tab" data-tab="info">ℹ️ Info</div>
-      </div>
-      <div id="outputArea">✨ Ready to run. Configure your local Piston API endpoint or use simulation mode.</div>
-      <div class="status-line">
-        <span>⏱️ timeout: 4s</span>
-        <span id="langVersionLabel">⚙️ language: python</span>
-        <span id="apiStatusBadge" style="color:#ffaa66;">⚠️ not connected</span>
-      </div>
+
+    <div class="console-panel">
+        <div class="console-header">
+            <span>📟 OUTPUT CONSOLE</span>
+            <button id="clearConsoleBtn" style="background:#3a3a3a; padding:2px 10px;">Clear</button>
+        </div>
+        <div class="console-output" id="consoleOutput">
+            > Welcome to CodeRunner Pro!<br>
+            > Real code compilation & execution via Piston API<br>
+            > Click module name to rename. Language change updates template.<br>
+            > Press Ctrl+Enter or click Run to execute code.
+        </div>
     </div>
-  </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
 <script>
-  // Language configurations
-  const languageMap = {
-    "python": { language: "python", version: "3.10.0", ext: "py", defaultCode: 'print("Hello from NovaCode!")\nimport sys\nprint("Args:", sys.argv[1:])\nprint("Python is working!")' },
-    "javascript": { language: "javascript", version: "18.15.0", ext: "js", defaultCode: 'console.log("Hello, World!");\nconsole.log("Args:", process.argv.slice(2));\nconsole.log("JavaScript execution successful!");' },
-    "typescript": { language: "typescript", version: "5.0.4", ext: "ts", defaultCode: 'console.log("Hello TypeScript!");\nconsole.log("Args:", process.argv.slice(2));' },
-    "rust": { language: "rust", version: "1.70.0", ext: "rs", defaultCode: 'fn main() {\n    println!("Hello from Rust!");\n    let args: Vec<String> = std::env::args().skip(1).collect();\n    println!("Args: {:?}", args);\n}' },
-    "c_cpp": { language: "c++", version: "10.2.0", ext: "cpp", defaultCode: '#include <iostream>\nusing namespace std;\nint main(int argc, char** argv) {\n    cout << "Hello C++!" << endl;\n    cout << "Args: ";\n    for(int i=1;i<argc;i++) cout << argv[i] << " ";\n    cout << endl;\n    return 0;\n}' },
-    "java": { language: "java", version: "17.0.6", ext: "java", defaultCode: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello Java!");\n        System.out.print("Args: ");\n        for(String s: args) System.out.print(s + " ");\n        System.out.println();\n    }\n}' },
-    "bash": { language: "bash", version: "5.1.16", ext: "sh", defaultCode: '#!/bin/bash\necho "Hello from Bash"\necho "Args: $@"\necho "Bash execution complete!"' }
-  };
-  
-  let currentLanguage = "python";
-  let currentCode = "";
-  let currentOutputTab = "output";
-  let lastExecutionResult = null;
-  let apiEndpoint = localStorage.getItem('piston_api_endpoint') || "http://localhost:2000/api/v2/execute";
-  
-  // DOM elements
-  const languageSelect = document.getElementById('languageSelect');
-  const versionSelect = document.getElementById('versionSelect');
-  const runButton = document.getElementById('runButton');
-  const saveCodeBtn = document.getElementById('saveCodeBtn');
-  const saveStatusMsg = document.getElementById('saveStatusMsg');
-  const codeEditor = document.getElementById('codeEditor');
-  const outputArea = document.getElementById('outputArea');
-  const langVersionLabel = document.getElementById('langVersionLabel');
-  const filenameHint = document.getElementById('filenameHint');
-  const apiEndpointInput = document.getElementById('apiEndpointInput');
-  const testApiBtn = document.getElementById('testApiBtn');
-  const apiStatusBadge = document.getElementById('apiStatusBadge');
-  
-  apiEndpointInput.value = apiEndpoint;
-  
-  function setSaveStatus(msg, isError = false) {
-    saveStatusMsg.innerHTML = isError ? `⚠️ ${msg}` : `✅ ${msg}`;
-    saveStatusMsg.style.color = isError ? "#ffa098" : "#b5e3b5";
-    setTimeout(() => {
-      saveStatusMsg.innerHTML = `💾 saved`;
-      saveStatusMsg.style.color = "#9aa2c0";
-    }, 2000);
-  }
-  
-  const STORAGE_KEY = "novacode_editor_data";
-  const STORAGE_LANG_KEY = "novacode_language";
-  
-  function saveToLocalStorage() {
-    const code = codeEditor.value;
-    const lang = currentLanguage;
-    const data = { code, language: lang, timestamp: Date.now() };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    localStorage.setItem(STORAGE_LANG_KEY, lang);
-    setSaveStatus("Saved to storage");
-  }
-  
-  function loadFromLocalStorage() {
-    const savedRaw = localStorage.getItem(STORAGE_KEY);
-    const savedLang = localStorage.getItem(STORAGE_LANG_KEY);
-    if(savedRaw) {
-      try {
-        const parsed = JSON.parse(savedRaw);
-        if(parsed.code !== undefined) {
-          codeEditor.value = parsed.code;
-          currentCode = parsed.code;
+    // ======================= REAL CODE EXECUTION API =======================
+    // Using Piston API (free, open-source code execution engine)
+    const PISTON_API = "https://emkc.org/api/v2/piston/execute";
+    
+    // Language configurations with correct Piston mappings
+    const LANG_CONFIG = {
+        python: {
+            name: "python",
+            version: "3.10.0",
+            ext: "py",
+            template: `# Python 3 Code
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+print("Fibonacci numbers:")
+for i in range(10):
+    print(f"fib({i}) = {fibonacci(i)}")
+
+# Try editing this code and run it!`,
+            monacoLang: "python"
+        },
+        javascript: {
+            name: "javascript",
+            version: "18.15.0",
+            ext: "js",
+            template: `// JavaScript (Node.js)
+function fibonacci(n) {
+    if (n <= 1) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+console.log("Fibonacci numbers:");
+for (let i = 0; i < 10; i++) {
+    console.log(\`fib(\${i}) = \${fibonacci(i)}\`);
+}
+
+// Edit this code and press Run!`,
+            monacoLang: "javascript"
+        },
+        java: {
+            name: "java",
+            version: "17.0.6",
+            ext: "java",
+            template: `// Java Code
+public class Main {
+    public static int fibonacci(int n) {
+        if (n <= 1) return n;
+        return fibonacci(n - 1) + fibonacci(n - 2);
+    }
+    
+    public static void main(String[] args) {
+        System.out.println("Fibonacci numbers:");
+        for (int i = 0; i < 10; i++) {
+            System.out.println("fib(" + i + ") = " + fibonacci(i));
         }
-        if(parsed.language && languageMap[parsed.language]) {
-          languageSelect.value = parsed.language;
-          onLanguageChange(false);
-        } else if(savedLang && languageMap[savedLang]) {
-          languageSelect.value = savedLang;
-          onLanguageChange(false);
+    }
+}`,
+            monacoLang: "java"
+        },
+        cpp: {
+            name: "c++",
+            version: "10.2.0",
+            ext: "cpp",
+            template: `// C++ Code
+#include <iostream>
+using namespace std;
+
+int fibonacci(int n) {
+    if (n <= 1) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+int main() {
+    cout << "Fibonacci numbers:" << endl;
+    for (int i = 0; i < 10; i++) {
+        cout << "fib(" << i << ") = " << fibonacci(i) << endl;
+    }
+    return 0;
+}`,
+            monacoLang: "cpp"
+        },
+        c: {
+            name: "c",
+            version: "10.2.0",
+            ext: "c",
+            template: `// C Code
+#include <stdio.h>
+
+int fibonacci(int n) {
+    if (n <= 1) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+int main() {
+    printf("Fibonacci numbers:\\n");
+    for (int i = 0; i < 10; i++) {
+        printf("fib(%d) = %d\\n", i, fibonacci(i));
+    }
+    return 0;
+}`,
+            monacoLang: "c"
+        },
+        rust: {
+            name: "rust",
+            version: "1.70.0",
+            ext: "rs",
+            template: `// Rust Code
+fn fibonacci(n: u32) -> u32 {
+    match n {
+        0 => 0,
+        1 => 1,
+        _ => fibonacci(n - 1) + fibonacci(n - 2),
+    }
+}
+
+fn main() {
+    println!("Fibonacci numbers:");
+    for i in 0..10 {
+        println!("fib({}) = {}", i, fibonacci(i));
+    }
+}`,
+            monacoLang: "rust"
         }
-      } catch(e) { console.warn(e); setDefaultCode(); }
-    } else {
-      setDefaultCode();
-    }
-    currentCode = codeEditor.value;
-  }
-  
-  function setDefaultCode() {
-    const defaultConf = languageMap[currentLanguage];
-    if(defaultConf) {
-      codeEditor.value = defaultConf.defaultCode;
-    } else {
-      codeEditor.value = 'print("Hello, world!")';
-    }
-  }
-  
-  function onLanguageChange(updateDefaultCode = true) {
-    const newLang = languageSelect.value;
-    currentLanguage = newLang;
-    const conf = languageMap[newLang];
-    if(conf) {
-      filenameHint.innerText = `code.${conf.ext}`;
-      langVersionLabel.innerText = `⚙️ ${conf.language} ${conf.version}`;
-      versionSelect.innerHTML = `<option value="${conf.version}">${conf.version}</option><option value="latest">latest</option>`;
-      if(updateDefaultCode && codeEditor.value.trim() === "") {
-        codeEditor.value = conf.defaultCode;
-      }
-    }
-  }
-  
-  // Simulate code execution when API is not available
-  function simulateExecution(code, language) {
-    const langConf = languageMap[language];
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const output = `[SIMULATION MODE] ${langConf.language} execution simulation\n` +
-                       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-                       `Code executed successfully (local simulation)\n\n` +
-                       `📝 Your code:\n${code.substring(0, 500)}${code.length > 500 ? '...' : ''}\n\n` +
-                       `💡 Tip: To get real execution, install and run Piston API locally:\n` +
-                       `   docker run -p 2000:2000 ghcr.io/engineer-man/piston\n` +
-                       `   Or visit: https://github.com/engineer-man/piston\n\n` +
-                       `✅ Simulated exit code: 0\n` +
-                       `🔧 Language: ${langConf.language} ${langConf.version}`;
-        
-        resolve({
-          run: {
-            stdout: output,
-            stderr: "",
-            output: output,
-            code: 0,
-            signal: null
-          },
-          language: langConf.language,
-          version: langConf.version
-        });
-      }, 500);
-    });
-  }
-  
-  // Test API connection
-  async function testApiConnection() {
-    const endpoint = apiEndpointInput.value;
-    apiStatusBadge.textContent = "🔄 testing...";
-    apiStatusBadge.style.color = "#ffaa66";
-    
-    try {
-      const testPayload = {
-        language: "python",
-        version: "3.10.0",
-        files: [{ name: "test.py", content: "print('test')" }],
-        run_timeout: 2000
-      };
-      
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(testPayload)
-      });
-      
-      if (response.ok) {
-        apiStatusBadge.textContent = "✅ connected";
-        apiStatusBadge.style.color = "#8bc34a";
-        localStorage.setItem('piston_api_endpoint', endpoint);
-        apiEndpoint = endpoint;
-        setSaveStatus("API connected!", false);
-      } else {
-        throw new Error(`HTTP ${response.status}`);
-      }
-    } catch (err) {
-      apiStatusBadge.textContent = "⚠️ offline (simulation)";
-      apiStatusBadge.style.color = "#ffaa66";
-      setSaveStatus("API unavailable, using simulation mode", true);
-    }
-  }
-  
-  // Execute code via piston API with fallback to simulation
-  async function executeCode() {
-    const code = codeEditor.value;
-    if(!code.trim()) {
-      outputArea.innerText = "[⚠️] No code to execute. Write some code!";
-      return;
-    }
-    
-    const langConf = languageMap[currentLanguage];
-    if(!langConf) {
-      outputArea.innerText = "[ERROR] Language not supported.";
-      return;
-    }
-    
-    let version = versionSelect.value;
-    if(version === "auto" || version === "latest") version = langConf.version;
-    
-    const fileName = `code.${langConf.ext}`;
-    const files = [{ name: fileName, content: code, encoding: "utf8" }];
-    const payload = {
-      language: langConf.language,
-      version: version,
-      files: files,
-      stdin: "",
-      args: [],
-      run_timeout: 4000,
-      compile_timeout: 8000,
-      run_memory_limit: -1,
-      compile_memory_limit: -1
     };
+
+    // Global state
+    let editor = null;
+    let currentModuleId = null;
+    let modules = {};
+    let moduleOrder = [];
+    let currentLanguage = "python";
+    let isExecuting = false;
+    let apiAvailable = true;
+
+    // Default modules with real code examples
+    const DEFAULT_MODULES = {
+        "fibonacci": { 
+            name: "Fibonacci", 
+            language: "python", 
+            code: LANG_CONFIG.python.template 
+        },
+        "sorting": { 
+            name: "Quick Sort", 
+            language: "javascript", 
+            code: `// Quick Sort Implementation
+function quickSort(arr) {
+    if (arr.length <= 1) return arr;
+    const pivot = arr[arr.length - 1];
+    const left = [];
+    const right = [];
+    for (let i = 0; i < arr.length - 1; i++) {
+        if (arr[i] < pivot) left.push(arr[i]);
+        else right.push(arr[i]);
+    }
+    return [...quickSort(left), pivot, ...quickSort(right)];
+}
+
+const arr = [64, 34, 25, 12, 22, 11, 90];
+console.log("Original array:", arr);
+console.log("Sorted array:", quickSort(arr));`
+        },
+        "prime_check": { 
+            name: "Prime Checker", 
+            language: "java", 
+            code: `// Prime Number Checker
+public class Main {
+    public static boolean isPrime(int n) {
+        if (n <= 1) return false;
+        for (int i = 2; i <= Math.sqrt(n); i++) {
+            if (n % i == 0) return false;
+        }
+        return true;
+    }
     
-    outputArea.innerHTML = "⏳ Executing... (attempting API connection)";
-    runButton.disabled = true;
-    runButton.style.opacity = "0.6";
+    public static void main(String[] args) {
+        System.out.println("Prime numbers from 1 to 50:");
+        for (int i = 1; i <= 50; i++) {
+            if (isPrime(i)) {
+                System.out.print(i + " ");
+            }
+        }
+        System.out.println();
+    }
+}`
+        },
+        "matrix_mult": { 
+            name: "Matrix Multiplication", 
+            language: "cpp", 
+            code: `// Matrix Multiplication
+#include <iostream>
+using namespace std;
+
+int main() {
+    int A[2][2] = {{1, 2}, {3, 4}};
+    int B[2][2] = {{5, 6}, {7, 8}};
+    int C[2][2] = {0};
     
-    try {
-      // Try to use configured API endpoint
-      const endpoint = apiEndpointInput.value;
-      let response;
-      try {
-        response = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+    cout << "Matrix A:" << endl;
+    for(int i = 0; i < 2; i++) {
+        for(int j = 0; j < 2; j++) {
+            cout << A[i][j] << " ";
+        }
+        cout << endl;
+    }
+    
+    cout << "Matrix B:" << endl;
+    for(int i = 0; i < 2; i++) {
+        for(int j = 0; j < 2; j++) {
+            cout << B[i][j] << " ";
+        }
+        cout << endl;
+    }
+    
+    // Matrix multiplication
+    for(int i = 0; i < 2; i++) {
+        for(int j = 0; j < 2; j++) {
+            for(int k = 0; k < 2; k++) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+    
+    cout << "Result Matrix C = A * B:" << endl;
+    for(int i = 0; i < 2; i++) {
+        for(int j = 0; j < 2; j++) {
+            cout << C[i][j] << " ";
+        }
+        cout << endl;
+    }
+    
+    return 0;
+}`
+        }
+    };
+
+    // Helper functions
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function addConsoleMessage(text, type = "output") {
+        const consoleDiv = document.getElementById("consoleOutput");
+        if (!consoleDiv) return;
+        const line = document.createElement("div");
+        line.style.marginBottom = "4px";
+        line.style.fontFamily = "monospace";
+        line.style.whiteSpace = "pre-wrap";
+        line.style.wordBreak = "break-word";
+        
+        if (type === "error") {
+            line.style.color = "#f48771";
+            line.innerHTML = `❌ ${escapeHtml(text)}`;
+        } else if (type === "success") {
+            line.style.color = "#6a9955";
+            line.innerHTML = `✅ ${escapeHtml(text)}`;
+        } else if (type === "info") {
+            line.style.color = "#9cdcfe";
+            line.innerHTML = `ℹ️ ${escapeHtml(text)}`;
+        } else {
+            line.style.color = "#ce9178";
+            line.innerHTML = escapeHtml(text);
+        }
+        consoleDiv.appendChild(line);
+        line.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function clearConsole() {
+        const consoleDiv = document.getElementById("consoleOutput");
+        if (consoleDiv) consoleDiv.innerHTML = "";
+        addConsoleMessage("Console cleared.", "info");
+    }
+
+    // Save everything to localStorage
+    function persistToLocalStorage() {
+        const dataToStore = {
+            modules: modules,
+            moduleOrder: moduleOrder,
+            currentModuleId: currentModuleId,
+            currentLanguage: currentLanguage
+        };
+        localStorage.setItem("coderunner_state", JSON.stringify(dataToStore));
+    }
+
+    // Load from localStorage
+    function loadFromLocalStorage() {
+        const saved = localStorage.getItem("coderunner_state");
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                modules = parsed.modules || {};
+                moduleOrder = parsed.moduleOrder || [];
+                currentModuleId = parsed.currentModuleId || null;
+                currentLanguage = parsed.currentLanguage || "python";
+                
+                for (let id of moduleOrder) {
+                    if (modules[id] && !modules[id].language) modules[id].language = "python";
+                    if (modules[id] && !modules[id].code) {
+                        modules[id].code = LANG_CONFIG[modules[id].language]?.template || LANG_CONFIG.python.template;
+                    }
+                }
+                return true;
+            } catch(e) { console.warn(e); }
+        }
+        // Initialize defaults
+        modules = {};
+        moduleOrder = [];
+        for (let [key, val] of Object.entries(DEFAULT_MODULES)) {
+            modules[key] = { 
+                name: val.name, 
+                language: val.language, 
+                code: val.code 
+            };
+            moduleOrder.push(key);
+        }
+        currentModuleId = moduleOrder[0];
+        currentLanguage = modules[currentModuleId]?.language || "python";
+        return false;
+    }
+
+    function getTemplateForLanguage(lang) {
+        return LANG_CONFIG[lang]?.template || LANG_CONFIG.python.template;
+    }
+
+    function updateEditorContent() {
+        if (!editor || !currentModuleId || !modules[currentModuleId]) return;
+        const module = modules[currentModuleId];
+        editor.setValue(module.code);
+        const monacoLang = LANG_CONFIG[module.language]?.monacoLang || "python";
+        monaco.editor.setModelLanguage(editor.getModel(), monacoLang);
+    }
+
+    function switchToModule(moduleId) {
+        if (!modules[moduleId]) return;
+        currentModuleId = moduleId;
+        const module = modules[moduleId];
+        currentLanguage = module.language;
+        
+        const langSelect = document.getElementById("languageSelect");
+        if (langSelect) langSelect.value = currentLanguage;
+        
+        updateEditorContent();
+        renderSidebar();
+        persistToLocalStorage();
+    }
+
+    function renameModule(moduleId, newName) {
+        if (!modules[moduleId]) return;
+        if (!newName || newName.trim() === "") return;
+        modules[moduleId].name = newName.trim();
+        renderSidebar();
+        persistToLocalStorage();
+        addConsoleMessage(`Module renamed to "${newName.trim()}"`, "success");
+    }
+
+    function deleteModule(moduleId, event) {
+        event.stopPropagation();
+        if (moduleOrder.length <= 1) {
+            addConsoleMessage("Cannot delete the last module. Create a new one first.", "error");
+            return;
+        }
+        if (confirm(`Delete module "${modules[moduleId].name}"?`)) {
+            const index = moduleOrder.indexOf(moduleId);
+            moduleOrder.splice(index, 1);
+            delete modules[moduleId];
+            
+            if (currentModuleId === moduleId) {
+                currentModuleId = moduleOrder[0];
+                if (currentModuleId) {
+                    currentLanguage = modules[currentModuleId].language;
+                    updateEditorContent();
+                }
+            }
+            renderSidebar();
+            persistToLocalStorage();
+            addConsoleMessage(`Module deleted.`, "info");
+        }
+    }
+
+    function addNewModule() {
+        let newId = "module_" + Date.now();
+        let baseName = "NewModule";
+        let counter = 1;
+        while (moduleOrder.some(id => modules[id]?.name === baseName + (counter > 1 ? counter : ""))) counter++;
+        const finalName = baseName + (counter > 1 ? counter : "");
+        
+        modules[newId] = {
+            name: finalName,
+            language: currentLanguage,
+            code: getTemplateForLanguage(currentLanguage)
+        };
+        moduleOrder.push(newId);
+        switchToModule(newId);
+        addConsoleMessage(`✅ Module "${finalName}" created with ${currentLanguage.toUpperCase()} template.`, "success");
+    }
+
+    function resetCurrentModule() {
+        if (!currentModuleId || !modules[currentModuleId]) return;
+        const module = modules[currentModuleId];
+        const template = getTemplateForLanguage(module.language);
+        module.code = template;
+        if (editor) editor.setValue(template);
+        persistToLocalStorage();
+        addConsoleMessage(`Module "${module.name}" reset to ${module.language.toUpperCase()} template.`, "success");
+    }
+
+    function changeModuleLanguage(newLang) {
+        if (!currentModuleId || !modules[currentModuleId]) return;
+        const module = modules[currentModuleId];
+        if (module.language === newLang) return;
+        
+        module.language = newLang;
+        module.code = getTemplateForLanguage(newLang);
+        currentLanguage = newLang;
+        
+        updateEditorContent();
+        persistToLocalStorage();
+        addConsoleMessage(`Language changed to ${newLang.toUpperCase()}. Code reset to template.`, "info");
+    }
+
+    // REAL CODE EXECUTION using Piston API
+    async function executeCode() {
+        if (!currentModuleId || !modules[currentModuleId]) {
+            addConsoleMessage("No active module", "error");
+            return;
+        }
+        
+        if (isExecuting) {
+            addConsoleMessage("Execution already in progress...", "info");
+            return;
+        }
+        
+        const module = modules[currentModuleId];
+        const code = module.code;
+        const lang = module.language;
+        const langConfig = LANG_CONFIG[lang];
+        
+        if (!code.trim()) {
+            addConsoleMessage("No code to execute.", "error");
+            return;
+        }
+        
+        isExecuting = true;
+        const runBtn = document.getElementById("runCodeBtn");
+        runBtn.disabled = true;
+        runBtn.style.opacity = "0.6";
+        
+        addConsoleMessage(`🚀 Compiling & executing ${lang.toUpperCase()} code...`, "info");
+        addConsoleMessage("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "output");
+        
+        const fileName = `code.${langConfig.ext}`;
+        const payload = {
+            language: langConfig.name,
+            version: langConfig.version,
+            files: [{ name: fileName, content: code }],
+            stdin: "",
+            args: [],
+            run_timeout: 5000,
+            compile_timeout: 10000,
+            run_memory_limit: -1,
+            compile_memory_limit: -1
+        };
+        
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            
+            const response = await fetch(PISTON_API, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 150)}`);
+            }
+            
+            const result = await response.json();
+            
+            // Display compilation output if any
+            if (result.compile && (result.compile.output || result.compile.stderr)) {
+                if (result.compile.stderr && result.compile.stderr.trim()) {
+                    addConsoleMessage("📦 COMPILATION ERRORS:", "error");
+                    addConsoleMessage(result.compile.stderr, "error");
+                }
+                if (result.compile.output && result.compile.output.trim()) {
+                    addConsoleMessage("📦 COMPILATION OUTPUT:", "info");
+                    addConsoleMessage(result.compile.output, "output");
+                }
+            }
+            
+            // Display run output
+            if (result.run) {
+                const output = result.run.output || result.run.stdout;
+                const stderr = result.run.stderr;
+                const exitCode = result.run.code;
+                const signal = result.run.signal;
+                
+                if (output && output.trim()) {
+                    addConsoleMessage("📟 PROGRAM OUTPUT:", "info");
+                    addConsoleMessage(output, "output");
+                }
+                if (stderr && stderr.trim()) {
+                    addConsoleMessage("⚠️ PROGRAM ERRORS:", "error");
+                    addConsoleMessage(stderr, "error");
+                }
+                if (exitCode === 0 && !signal) {
+                    addConsoleMessage(`✓ Execution completed successfully (exit code: 0)`, "success");
+                } else if (exitCode !== null && exitCode !== 0) {
+                    addConsoleMessage(`✗ Process exited with code: ${exitCode}`, "error");
+                } else if (signal) {
+                    addConsoleMessage(`✗ Process terminated by signal: ${signal}`, "error");
+                }
+            }
+            
+            apiAvailable = true;
+            document.getElementById("apiStatus").innerHTML = "✅ API Online";
+            document.getElementById("apiStatus").style.background = "#2c6e2c";
+            
+        } catch (error) {
+            console.error("Execution error:", error);
+            addConsoleMessage(`Execution failed: ${error.message}`, "error");
+            
+            if (error.name === "AbortError") {
+                addConsoleMessage("Request timeout - API took too long to respond.", "error");
+            }
+            
+            apiAvailable = false;
+            document.getElementById("apiStatus").innerHTML = "⚠️ API Slow/Offline";
+            document.getElementById("apiStatus").style.background = "#8b5a2b";
+            addConsoleMessage("Note: Piston API may be rate-limited. Please wait a moment and try again.", "info");
+            
+        } finally {
+            isExecuting = false;
+            runBtn.disabled = false;
+            runBtn.style.opacity = "1";
+            addConsoleMessage("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "output");
+        }
+    }
+
+    // Render sidebar with editable module names
+    function renderSidebar() {
+        const container = document.getElementById("moduleList");
+        if (!container) return;
+        container.innerHTML = "";
+        
+        moduleOrder.forEach(modId => {
+            const mod = modules[modId];
+            if (!mod) return;
+            
+            const li = document.createElement("li");
+            li.className = "module-item";
+            if (currentModuleId === modId) li.classList.add("active");
+            li.setAttribute("data-module-id", modId);
+            
+            let icon = "📄";
+            if (mod.language === "python") icon = "🐍";
+            else if (mod.language === "javascript") icon = "🟨";
+            else if (mod.language === "java") icon = "☕";
+            else if (mod.language === "cpp") icon = "⚙️";
+            else if (mod.language === "c") icon = "🔵";
+            else if (mod.language === "rust") icon = "🦀";
+            
+            const nameSpan = document.createElement("span");
+            nameSpan.className = "module-name";
+            nameSpan.textContent = mod.name;
+            nameSpan.setAttribute("contenteditable", "false");
+            nameSpan.title = "Click to rename";
+            
+            nameSpan.addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (nameSpan.getAttribute("contenteditable") === "true") return;
+                nameSpan.setAttribute("contenteditable", "true");
+                nameSpan.focus();
+                
+                const range = document.createRange();
+                const selection = window.getSelection();
+                range.selectNodeContents(nameSpan);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            });
+            
+            nameSpan.addEventListener("blur", () => {
+                const newName = nameSpan.textContent.trim();
+                nameSpan.setAttribute("contenteditable", "false");
+                if (newName && newName !== mod.name) {
+                    renameModule(modId, newName);
+                } else if (!newName) {
+                    nameSpan.textContent = mod.name;
+                }
+            });
+            
+            nameSpan.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    nameSpan.blur();
+                }
+                if (e.key === "Escape") {
+                    nameSpan.textContent = mod.name;
+                    nameSpan.blur();
+                }
+            });
+            
+            const deleteBtn = document.createElement("span");
+            deleteBtn.className = "delete-module";
+            deleteBtn.textContent = "🗑️";
+            deleteBtn.title = "Delete module";
+            deleteBtn.addEventListener("click", (e) => deleteModule(modId, e));
+            
+            li.appendChild(document.createTextNode(icon + " "));
+            li.appendChild(nameSpan);
+            li.appendChild(deleteBtn);
+            
+            li.addEventListener("click", (e) => {
+                if (e.target === deleteBtn || nameSpan.contains(e.target)) return;
+                switchToModule(modId);
+            });
+            
+            container.appendChild(li);
+        });
+    }
+
+    function syncEditorContent() {
+        if (editor && currentModuleId && modules[currentModuleId]) {
+            const newCode = editor.getValue();
+            modules[currentModuleId].code = newCode;
+            persistToLocalStorage();
+        }
+    }
+
+    // Initialize Monaco Editor
+    function initMonaco() {
+        require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
+        require(['vs/editor/editor.main'], function () {
+            editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+                value: '',
+                language: 'python',
+                theme: 'vs-dark',
+                fontSize: 13,
+                automaticLayout: true,
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                lineNumbers: 'on',
+                fontFamily: 'Consolas, "Courier New", monospace',
+                renderWhitespace: "selection"
+            });
+            
+            if (currentModuleId && modules[currentModuleId]) {
+                editor.setValue(modules[currentModuleId].code);
+                const lang = LANG_CONFIG[modules[currentModuleId].language]?.monacoLang || "python";
+                monaco.editor.setModelLanguage(editor.getModel(), lang);
+            }
+            
+            editor.onDidChangeModelContent(() => {
+                syncEditorContent();
+            });
+        });
+    }
+
+    // Event bindings
+    function bindEvents() {
+        const runBtn = document.getElementById("runCodeBtn");
+        const resetBtn = document.getElementById("resetCodeBtn");
+        const clearConsoleBtn = document.getElementById("clearConsoleBtn");
+        const langSelect = document.getElementById("languageSelect");
+        const addBtn = document.getElementById("addModuleBtn");
+        
+        runBtn.addEventListener("click", () => executeCode());
+        resetBtn.addEventListener("click", () => resetCurrentModule());
+        clearConsoleBtn.addEventListener("click", () => clearConsole());
+        addBtn.addEventListener("click", () => addNewModule());
+        
+        langSelect.addEventListener("change", (e) => {
+            const newLang = e.target.value;
+            if (currentModuleId && modules[currentModuleId]) {
+                changeModuleLanguage(newLang);
+            }
+            currentLanguage = newLang;
         });
         
-        if (!response.ok) {
-          throw new Error(`API returned ${response.status}`);
+        window.addEventListener("keydown", (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                e.preventDefault();
+                executeCode();
+            }
+        });
+    }
+
+    // Test API on startup
+    async function testApi() {
+        try {
+            const response = await fetch(PISTON_API, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    language: "python",
+                    version: "3.10.0",
+                    files: [{ name: "test.py", content: "print('test')" }],
+                    run_timeout: 2000
+                })
+            });
+            if (response.ok) {
+                document.getElementById("apiStatus").innerHTML = "✅ API Online";
+                document.getElementById("apiStatus").style.background = "#2c6e2c";
+                apiAvailable = true;
+            } else {
+                throw new Error("API unavailable");
+            }
+        } catch (err) {
+            document.getElementById("apiStatus").innerHTML = "⚠️ Using Simulation";
+            document.getElementById("apiStatus").style.background = "#8b5a2b";
+            apiAvailable = false;
         }
-        
-        const result = await response.json();
-        renderExecutionResult(result);
-        apiStatusBadge.textContent = "✅ connected";
-        apiStatusBadge.style.color = "#8bc34a";
-        localStorage.setItem('piston_api_endpoint', endpoint);
-        apiEndpoint = endpoint;
-        
-      } catch (apiError) {
-        console.warn("API error, falling back to simulation:", apiError);
-        apiStatusBadge.textContent = "⚠️ offline (simulation)";
-        apiStatusBadge.style.color = "#ffaa66";
-        
-        // Fallback to simulation
-        const simulatedResult = await simulateExecution(code, currentLanguage);
-        renderExecutionResult(simulatedResult);
-        setSaveStatus("Using simulation mode - install Piston API for real execution", true);
-      }
-      
-    } catch (err) {
-      console.error(err);
-      outputArea.innerHTML = `🚨 Execution Error:\n${err.message}\n\n` +
-        `To run code locally, install Piston API:\n` +
-        `docker run -p 2000:2000 ghcr.io/engineer-man/piston\n` +
-        `Then set API endpoint to http://localhost:2000/api/v2/execute`;
-    } finally {
-      runButton.disabled = false;
-      runButton.style.opacity = "1";
     }
-  }
-  
-  function renderExecutionResult(result) {
-    let outputText = "";
-    let compileInfo = "";
-    
-    if(result.compile) {
-      compileInfo = `\n\n📦 COMPILE STAGE:\n${result.compile.output || (result.compile.stdout + result.compile.stderr)}\nExit code: ${result.compile.code}\n`;
+
+    // Bootstrap application
+    function bootstrap() {
+        loadFromLocalStorage();
+        renderSidebar();
+        bindEvents();
+        initMonaco();
+        testApi();
+        
+        setTimeout(() => {
+            if (currentModuleId && modules[currentModuleId] && editor) {
+                editor.setValue(modules[currentModuleId].code);
+                const lang = LANG_CONFIG[modules[currentModuleId].language]?.monacoLang || "python";
+                if (editor.getModel()) monaco.editor.setModelLanguage(editor.getModel(), lang);
+            }
+        }, 500);
+        
+        addConsoleMessage("Editor ready! Real code compilation via Piston API.", "success");
+        addConsoleMessage("Click module name to rename. Language change updates template.", "info");
     }
     
-    const runStage = result.run;
-    if(runStage) {
-      let stdOutput = runStage.output !== undefined ? runStage.output : (runStage.stdout + runStage.stderr);
-      if(stdOutput === "") stdOutput = "(no output)";
-      const exitMsg = runStage.code !== null ? `exit code: ${runStage.code}` : `signal: ${runStage.signal}`;
-      outputText = `📟 PROGRAM OUTPUT:\n${stdOutput}\n\n🏁 ${exitMsg}`;
-      if(runStage.stderr && runStage.stderr.trim()) {
-        outputText += `\n\n⚠️ STDERR:\n${runStage.stderr}`;
-      }
-    } else {
-      outputText = "⚠️ No run data returned.";
-    }
-    
-    const fullOutput = compileInfo ? outputText + compileInfo : outputText;
-    outputArea.innerText = fullOutput;
-    
-    const infoContent = `⚡ Execution Info:
-• Language: ${result.language || languageMap[currentLanguage].language}
-• Version: ${result.version || versionSelect.value}
-• Runtime limits: 4s (run)
-• API Mode: ${apiStatusBadge.textContent}
-• Timestamp: ${new Date().toLocaleString()}
-${result.compile ? "• Compiled before run" : "• Interpreted / no separate compile stage"}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💡 Setup local Piston API:
-   docker run -p 2000:2000 ghcr.io/engineer-man/piston
-   Then use endpoint: http://localhost:2000/api/v2/execute`;
-    
-    outputArea.dataset.infoContent = infoContent;
-    lastExecutionResult = result;
-    
-    if(currentOutputTab === "info") {
-      outputArea.innerText = infoContent;
-    }
-  }
-  
-  // Tab switching
-  function setupTabs() {
-    const tabs = document.querySelectorAll('.output-tab');
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        const target = tab.dataset.tab;
-        currentOutputTab = target;
-        tabs.forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        
-        if(target === 'output') {
-          if(lastExecutionResult) {
-            renderExecutionResult(lastExecutionResult);
-          } else {
-            outputArea.innerText = "✨ Press ▶ RUN to see program output.";
-          }
-        } else {
-          const infoCached = outputArea.dataset.infoContent;
-          if(infoCached) {
-            outputArea.innerText = infoCached;
-          } else {
-            outputArea.innerText = "ℹ️ No execution yet. Run code to see detailed runtime information.";
-          }
-        }
-      });
-    });
-  }
-  
-  function initEventListeners() {
-    runButton.addEventListener('click', executeCode);
-    saveCodeBtn.addEventListener('click', saveToLocalStorage);
-    testApiBtn.addEventListener('click', testApiConnection);
-    languageSelect.addEventListener('change', () => {
-      onLanguageChange(true);
-      saveToLocalStorage();
-    });
-    codeEditor.addEventListener('input', (e) => {
-      currentCode = e.target.value;
-    });
-  }
-  
-  function finalInit() {
-    loadFromLocalStorage();
-    onLanguageChange(false);
-    initEventListeners();
-    setupTabs();
-    testApiConnection(); // Test API on startup
-    outputArea.dataset.infoContent = "⚙️ Ready. Configure your Piston API endpoint or use simulation mode.";
-  }
-  
-  finalInit();
+    bootstrap();
 </script>
 </body>
 </html>
