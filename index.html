@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -19,7 +19,6 @@
       color: #e3e6f0;
     }
 
-    /* custom scrollbar */
     ::-webkit-scrollbar {
       width: 8px;
       height: 8px;
@@ -40,12 +39,10 @@
       display: flex;
       flex-direction: column;
       height: 100vh;
-      backdrop-filter: blur(2px);
     }
 
-    /* header / top bar */
     .top-bar {
-      background: rgba(18, 22, 30, 0.85);
+      background: rgba(18, 22, 30, 0.95);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid rgba(72, 85, 106, 0.4);
       padding: 0.75rem 1.5rem;
@@ -64,7 +61,6 @@
     }
     .logo-icon {
       font-size: 1.8rem;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
     }
     .logo-text {
       font-weight: 700;
@@ -91,7 +87,7 @@
       flex-wrap: wrap;
     }
 
-    select, button, .save-status {
+    select, button, .save-status, .api-mode {
       background: #13161f;
       border: 1px solid #2e3347;
       padding: 0.5rem 1rem;
@@ -102,6 +98,11 @@
       cursor: pointer;
       transition: all 0.2s ease;
       font-family: 'Inter', monospace;
+    }
+    .api-mode {
+      cursor: default;
+      background: #1a1e2a;
+      font-size: 0.75rem;
     }
     select {
       background: #0f121b;
@@ -114,14 +115,10 @@
       gap: 8px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.2);
     }
-    button i { font-style: normal; font-weight: 600; }
     button:hover {
       background: #2c3342;
       border-color: #5f6e92;
       transform: translateY(-1px);
-    }
-    button:active {
-      transform: translateY(1px);
     }
     .run-btn {
       background: #2d4a6e;
@@ -139,12 +136,8 @@
       cursor: default;
       font-size: 0.75rem;
       padding: 0.3rem 1rem;
-      display: flex;
-      align-items: center;
-      gap: 6px;
     }
 
-    /* main editor + output area */
     .main-workspace {
       display: flex;
       flex: 1;
@@ -170,7 +163,6 @@
       padding: 0.7rem 1.2rem;
       font-size: 0.8rem;
       font-weight: 600;
-      letter-spacing: 0.3px;
       border-bottom: 1px solid #252b3a;
       display: flex;
       justify-content: space-between;
@@ -252,6 +244,24 @@
       color: #9aa2c0;
     }
 
+    .api-config {
+      background: #0b0e16;
+      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    #apiEndpointInput {
+      background: #1a1e2a;
+      border: 1px solid #2e3347;
+      padding: 0.3rem 0.7rem;
+      border-radius: 8px;
+      color: white;
+      font-size: 0.75rem;
+      width: 220px;
+    }
+
     @media (max-width: 780px) {
       .main-workspace {
         flex-direction: column;
@@ -275,6 +285,11 @@
       <span class="badge">piston v2</span>
     </div>
     <div class="controls">
+      <div class="api-config">
+        <span style="font-size:0.7rem;">🔌 API:</span>
+        <input type="text" id="apiEndpointInput" placeholder="http://localhost:2000/api/v2/execute" value="http://localhost:2000/api/v2/execute">
+        <button id="testApiBtn" style="padding:0.3rem 0.7rem; font-size:0.7rem;">Test</button>
+      </div>
       <select id="languageSelect">
         <option value="python">🐍 Python 3.10+</option>
         <option value="javascript">🟨 JavaScript (Node.js)</option>
@@ -288,7 +303,7 @@
         <option value="auto">🔄 auto (latest)</option>
       </select>
       <button id="runButton" class="run-btn">▶ RUN CODE</button>
-      <button id="saveCodeBtn">💾 Save to Local</button>
+      <button id="saveCodeBtn">💾 Save</button>
       <div class="save-status" id="saveStatusMsg">✨ ready</div>
     </div>
   </div>
@@ -306,44 +321,33 @@
         <div class="output-tab active" data-tab="output">📟 Output</div>
         <div class="output-tab" data-tab="info">ℹ️ Info</div>
       </div>
-      <div id="outputArea">✨ Ready to run. Press ▶ RUN CODE or save with 💾</div>
+      <div id="outputArea">✨ Ready to run. Configure your local Piston API endpoint or use simulation mode.</div>
       <div class="status-line">
-        <span>⏱️ run timeout: 4s</span>
+        <span>⏱️ timeout: 4s</span>
         <span id="langVersionLabel">⚙️ language: python</span>
+        <span id="apiStatusBadge" style="color:#ffaa66;">⚠️ not connected</span>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-  // ---------- API CONFIGURATION ----------
-  const API_ENDPOINT = '/api/v2/execute';   // relative to origin (use proxy or local piston)
-  // if your piston server is on same origin? For demo we assume same-host or use relative.
-  // For local testing piston might run on port 2000, but we keep relative.
-  // Alternatively you can override: "https://emkc.org/api/v2/piston/execute" (public test)
-  // To make it fully functional without CORS we will use a public fallback if needed? 
-  // But per spec we'll call relative endpoint. For demo on local machine you may run piston locally.
-  // For reliable web demo, we detect and provide fallback public piston API (emkc) if needed.
-  // We'll use piston.emkc.dev public api for out-of-box experience, respecting CORS.
-  // Using public Piston API (free tier) that matches the spec.
-  const PUBLIC_PISTON = "https://emkc.org/api/v2/piston/execute";
-  
-  // Language mapping + version mapping (rough)
+  // Language configurations
   const languageMap = {
-    "python": { language: "python", version: "3.10.0", ext: "py", defaultCode: 'print("Hello from NovaCode!")\n# args demo:\nimport sys\nprint("Args:", sys.argv[1:])' },
-    "javascript": { language: "javascript", version: "18.15.0", ext: "js", defaultCode: 'console.log("Hello, World!");\nconsole.log("Args:", process.argv.slice(2));' },
+    "python": { language: "python", version: "3.10.0", ext: "py", defaultCode: 'print("Hello from NovaCode!")\nimport sys\nprint("Args:", sys.argv[1:])\nprint("Python is working!")' },
+    "javascript": { language: "javascript", version: "18.15.0", ext: "js", defaultCode: 'console.log("Hello, World!");\nconsole.log("Args:", process.argv.slice(2));\nconsole.log("JavaScript execution successful!");' },
     "typescript": { language: "typescript", version: "5.0.4", ext: "ts", defaultCode: 'console.log("Hello TypeScript!");\nconsole.log("Args:", process.argv.slice(2));' },
     "rust": { language: "rust", version: "1.70.0", ext: "rs", defaultCode: 'fn main() {\n    println!("Hello from Rust!");\n    let args: Vec<String> = std::env::args().skip(1).collect();\n    println!("Args: {:?}", args);\n}' },
     "c_cpp": { language: "c++", version: "10.2.0", ext: "cpp", defaultCode: '#include <iostream>\nusing namespace std;\nint main(int argc, char** argv) {\n    cout << "Hello C++!" << endl;\n    cout << "Args: ";\n    for(int i=1;i<argc;i++) cout << argv[i] << " ";\n    cout << endl;\n    return 0;\n}' },
     "java": { language: "java", version: "17.0.6", ext: "java", defaultCode: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello Java!");\n        System.out.print("Args: ");\n        for(String s: args) System.out.print(s + " ");\n        System.out.println();\n    }\n}' },
-    "bash": { language: "bash", version: "5.1.16", ext: "sh", defaultCode: '#!/bin/bash\necho "Hello from Bash"\necho "Args: $@"' }
+    "bash": { language: "bash", version: "5.1.16", ext: "sh", defaultCode: '#!/bin/bash\necho "Hello from Bash"\necho "Args: $@"\necho "Bash execution complete!"' }
   };
   
   let currentLanguage = "python";
-  let availableVersions = {}; // dummy
   let currentCode = "";
   let currentOutputTab = "output";
-  let lastExecutionMeta = { language: "", version: "" };
+  let lastExecutionResult = null;
+  let apiEndpoint = localStorage.getItem('piston_api_endpoint') || "http://localhost:2000/api/v2/execute";
   
   // DOM elements
   const languageSelect = document.getElementById('languageSelect');
@@ -355,20 +359,21 @@
   const outputArea = document.getElementById('outputArea');
   const langVersionLabel = document.getElementById('langVersionLabel');
   const filenameHint = document.getElementById('filenameHint');
+  const apiEndpointInput = document.getElementById('apiEndpointInput');
+  const testApiBtn = document.getElementById('testApiBtn');
+  const apiStatusBadge = document.getElementById('apiStatusBadge');
   
-  // Helper: set save status with auto clear
-  let statusTimeout = null;
+  apiEndpointInput.value = apiEndpoint;
+  
   function setSaveStatus(msg, isError = false) {
-    if(statusTimeout) clearTimeout(statusTimeout);
     saveStatusMsg.innerHTML = isError ? `⚠️ ${msg}` : `✅ ${msg}`;
     saveStatusMsg.style.color = isError ? "#ffa098" : "#b5e3b5";
-    statusTimeout = setTimeout(() => {
+    setTimeout(() => {
       saveStatusMsg.innerHTML = `💾 saved`;
       saveStatusMsg.style.color = "#9aa2c0";
     }, 2000);
   }
   
-  // LocalStorage key
   const STORAGE_KEY = "novacode_editor_data";
   const STORAGE_LANG_KEY = "novacode_language";
   
@@ -378,7 +383,7 @@
     const data = { code, language: lang, timestamp: Date.now() };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     localStorage.setItem(STORAGE_LANG_KEY, lang);
-    setSaveStatus("Saved to browser storage");
+    setSaveStatus("Saved to storage");
   }
   
   function loadFromLocalStorage() {
@@ -393,19 +398,15 @@
         }
         if(parsed.language && languageMap[parsed.language]) {
           languageSelect.value = parsed.language;
-          onLanguageChange(false); // update without overwriting code
+          onLanguageChange(false);
         } else if(savedLang && languageMap[savedLang]) {
           languageSelect.value = savedLang;
           onLanguageChange(false);
-        } else {
-          onLanguageChange(false);
         }
-        setSaveStatus("Loaded from storage", false);
       } catch(e) { console.warn(e); setDefaultCode(); }
     } else {
       setDefaultCode();
     }
-    // sync current code variable
     currentCode = codeEditor.value;
   }
   
@@ -413,7 +414,6 @@
     const defaultConf = languageMap[currentLanguage];
     if(defaultConf) {
       codeEditor.value = defaultConf.defaultCode;
-      currentCode = codeEditor.value;
     } else {
       codeEditor.value = 'print("Hello, world!")';
     }
@@ -426,81 +426,153 @@
     if(conf) {
       filenameHint.innerText = `code.${conf.ext}`;
       langVersionLabel.innerText = `⚙️ ${conf.language} ${conf.version}`;
-      // update version select placeholder
-      versionSelect.innerHTML = `<option value="${conf.version}">${conf.version} (default)</option><option value="latest">latest</option>`;
-      if(updateDefaultCode) {
-        // if editor empty or only whitespace we set default? but not to overwrite user code too aggressively
-        if(codeEditor.value.trim() === "" || codeEditor.value.includes("Hello from NovaCode") && !localStorage.getItem(STORAGE_KEY)) {
-          codeEditor.value = conf.defaultCode;
-        } else {
-          // keep user code
-        }
-        currentCode = codeEditor.value;
+      versionSelect.innerHTML = `<option value="${conf.version}">${conf.version}</option><option value="latest">latest</option>`;
+      if(updateDefaultCode && codeEditor.value.trim() === "") {
+        codeEditor.value = conf.defaultCode;
       }
     }
   }
   
-  // Execute code via piston API
+  // Simulate code execution when API is not available
+  function simulateExecution(code, language) {
+    const langConf = languageMap[language];
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const output = `[SIMULATION MODE] ${langConf.language} execution simulation\n` +
+                       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+                       `Code executed successfully (local simulation)\n\n` +
+                       `📝 Your code:\n${code.substring(0, 500)}${code.length > 500 ? '...' : ''}\n\n` +
+                       `💡 Tip: To get real execution, install and run Piston API locally:\n` +
+                       `   docker run -p 2000:2000 ghcr.io/engineer-man/piston\n` +
+                       `   Or visit: https://github.com/engineer-man/piston\n\n` +
+                       `✅ Simulated exit code: 0\n` +
+                       `🔧 Language: ${langConf.language} ${langConf.version}`;
+        
+        resolve({
+          run: {
+            stdout: output,
+            stderr: "",
+            output: output,
+            code: 0,
+            signal: null
+          },
+          language: langConf.language,
+          version: langConf.version
+        });
+      }, 500);
+    });
+  }
+  
+  // Test API connection
+  async function testApiConnection() {
+    const endpoint = apiEndpointInput.value;
+    apiStatusBadge.textContent = "🔄 testing...";
+    apiStatusBadge.style.color = "#ffaa66";
+    
+    try {
+      const testPayload = {
+        language: "python",
+        version: "3.10.0",
+        files: [{ name: "test.py", content: "print('test')" }],
+        run_timeout: 2000
+      };
+      
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(testPayload)
+      });
+      
+      if (response.ok) {
+        apiStatusBadge.textContent = "✅ connected";
+        apiStatusBadge.style.color = "#8bc34a";
+        localStorage.setItem('piston_api_endpoint', endpoint);
+        apiEndpoint = endpoint;
+        setSaveStatus("API connected!", false);
+      } else {
+        throw new Error(`HTTP ${response.status}`);
+      }
+    } catch (err) {
+      apiStatusBadge.textContent = "⚠️ offline (simulation)";
+      apiStatusBadge.style.color = "#ffaa66";
+      setSaveStatus("API unavailable, using simulation mode", true);
+    }
+  }
+  
+  // Execute code via piston API with fallback to simulation
   async function executeCode() {
     const code = codeEditor.value;
     if(!code.trim()) {
       outputArea.innerText = "[⚠️] No code to execute. Write some code!";
       return;
     }
+    
     const langConf = languageMap[currentLanguage];
     if(!langConf) {
       outputArea.innerText = "[ERROR] Language not supported.";
       return;
     }
-    // get version from select
+    
     let version = versionSelect.value;
     if(version === "auto" || version === "latest") version = langConf.version;
     
-    // Prepare payload according to Piston v2 spec
     const fileName = `code.${langConf.ext}`;
     const files = [{ name: fileName, content: code, encoding: "utf8" }];
-    const stdinValue = "";   // empty by default, you could add stdin input later
-    const args = []; // optional args demo: can be extended
-    const run_timeout = 4000;   // 4 sec
-    const compile_timeout = 8000;
-    const run_memory_limit = -1;
-    const compile_memory_limit = -1;
-    
     const payload = {
       language: langConf.language,
       version: version,
       files: files,
-      stdin: stdinValue,
-      args: args,
-      run_timeout: run_timeout,
-      compile_timeout: compile_timeout,
-      run_memory_limit: run_memory_limit,
-      compile_memory_limit: compile_memory_limit
+      stdin: "",
+      args: [],
+      run_timeout: 4000,
+      compile_timeout: 8000,
+      run_memory_limit: -1,
+      compile_memory_limit: -1
     };
     
-    // UI feedback
-    outputArea.innerHTML = "⏳ Executing... (sending to piston engine)";
+    outputArea.innerHTML = "⏳ Executing... (attempting API connection)";
     runButton.disabled = true;
     runButton.style.opacity = "0.6";
     
     try {
-      // use public piston endpoint to guarantee cross origin works (CORS enabled)
-      const response = await fetch(PUBLIC_PISTON, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      
-      if(!response.ok) {
-        const errText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errText.slice(0, 120)}`);
+      // Try to use configured API endpoint
+      const endpoint = apiEndpointInput.value;
+      let response;
+      try {
+        response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`);
+        }
+        
+        const result = await response.json();
+        renderExecutionResult(result);
+        apiStatusBadge.textContent = "✅ connected";
+        apiStatusBadge.style.color = "#8bc34a";
+        localStorage.setItem('piston_api_endpoint', endpoint);
+        apiEndpoint = endpoint;
+        
+      } catch (apiError) {
+        console.warn("API error, falling back to simulation:", apiError);
+        apiStatusBadge.textContent = "⚠️ offline (simulation)";
+        apiStatusBadge.style.color = "#ffaa66";
+        
+        // Fallback to simulation
+        const simulatedResult = await simulateExecution(code, currentLanguage);
+        renderExecutionResult(simulatedResult);
+        setSaveStatus("Using simulation mode - install Piston API for real execution", true);
       }
-      const result = await response.json();
-      renderExecutionResult(result);
-      lastExecutionMeta = { language: result.language || langConf.language, version: result.version || version };
+      
     } catch (err) {
       console.error(err);
-      outputArea.innerHTML = `🚨 Execution Error:\n${err.message}\n\nTip: Make sure piston API is reachable. Using public emkc.org service.`;
+      outputArea.innerHTML = `🚨 Execution Error:\n${err.message}\n\n` +
+        `To run code locally, install Piston API:\n` +
+        `docker run -p 2000:2000 ghcr.io/engineer-man/piston\n` +
+        `Then set API endpoint to http://localhost:2000/api/v2/execute`;
     } finally {
       runButton.disabled = false;
       runButton.style.opacity = "1";
@@ -508,12 +580,13 @@
   }
   
   function renderExecutionResult(result) {
-    // result shape: { run: { stdout, stderr, output, code, signal }, language, version, compile? }
     let outputText = "";
     let compileInfo = "";
+    
     if(result.compile) {
       compileInfo = `\n\n📦 COMPILE STAGE:\n${result.compile.output || (result.compile.stdout + result.compile.stderr)}\nExit code: ${result.compile.code}\n`;
     }
+    
     const runStage = result.run;
     if(runStage) {
       let stdOutput = runStage.output !== undefined ? runStage.output : (runStage.stdout + runStage.stderr);
@@ -524,25 +597,28 @@
         outputText += `\n\n⚠️ STDERR:\n${runStage.stderr}`;
       }
     } else {
-      outputText = "⚠️ No run data returned from API.";
+      outputText = "⚠️ No run data returned.";
     }
+    
     const fullOutput = compileInfo ? outputText + compileInfo : outputText;
     outputArea.innerText = fullOutput;
     
-    // update info tab content? we'll handle dynamic with tab switching
     const infoContent = `⚡ Execution Info:
 • Language: ${result.language || languageMap[currentLanguage].language}
 • Version: ${result.version || versionSelect.value}
 • Runtime limits: 4s (run)
-• API: Piston v2
-• Timestamp: ${new Date().toLocaleTimeString()}
-${result.compile ? "• Compiled before run" : "• Interpreted / no separate compile stage"}`;
+• API Mode: ${apiStatusBadge.textContent}
+• Timestamp: ${new Date().toLocaleString()}
+${result.compile ? "• Compiled before run" : "• Interpreted / no separate compile stage"}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 Setup local Piston API:
+   docker run -p 2000:2000 ghcr.io/engineer-man/piston
+   Then use endpoint: http://localhost:2000/api/v2/execute`;
     
-    // store info in dataset for tab switch
     outputArea.dataset.infoContent = infoContent;
-    if(currentOutputTab === "output") {
-      // already shown output
-    } else if(currentOutputTab === "info") {
+    lastExecutionResult = result;
+    
+    if(currentOutputTab === "info") {
       outputArea.innerText = infoContent;
     }
   }
@@ -556,21 +632,14 @@ ${result.compile ? "• Compiled before run" : "• Interpreted / no separate co
         currentOutputTab = target;
         tabs.forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
+        
         if(target === 'output') {
-          // restore last execution or show default placeholder
-          if(lastExecutionMeta.language) {
-            // we need to re-show last output? we keep last output in memory but easiest: call dummy refresh
-            // better keep lastOutputRaw string
-            const lastOutputRaw = outputArea.dataset.lastOutputRaw;
-            if(lastOutputRaw) outputArea.innerText = lastOutputRaw;
-            else outputArea.innerText = "✨ Run some code to see output.";
+          if(lastExecutionResult) {
+            renderExecutionResult(lastExecutionResult);
           } else {
-            if(outputArea.innerText.includes("Execution Info")) {
-              outputArea.innerText = "✨ Press ▶ RUN to see program output.";
-            }
+            outputArea.innerText = "✨ Press ▶ RUN to see program output.";
           }
         } else {
-          // info tab
           const infoCached = outputArea.dataset.infoContent;
           if(infoCached) {
             outputArea.innerText = infoCached;
@@ -582,69 +651,26 @@ ${result.compile ? "• Compiled before run" : "• Interpreted / no separate co
     });
   }
   
-  // override preserve output raw on each run
-  function patchOutputStorage() {
-    const originalRender = renderExecutionResult;
-    window.renderExecutionResult = function(res) {
-      originalRender(res);
-      // capture raw output for tab restore
-      const currentText = outputArea.innerText;
-      outputArea.dataset.lastOutputRaw = currentText;
-      // also generate info
-      const langUsed = res.language || languageMap[currentLanguage]?.language;
-      const versionUsed = res.version || versionSelect.value;
-      const infoString = `⚡ Execution Info:
-• Language: ${langUsed}
-• Version: ${versionUsed}
-• Limits: run_timeout=4s, memory unlimited
-• API endpoint: Piston public
-• Timestamp: ${new Date().toLocaleString()}
-${res.compile ? "• Compilation stage executed" : "• No separate compilation"}`;
-      outputArea.dataset.infoContent = infoString;
-      if(currentOutputTab === 'info') outputArea.innerText = infoString;
-    };
-    renderExecutionResult = window.renderExecutionResult;
-  }
-  
-  // override
-  function enhanceRun() {
-    const origExecute = executeCode;
-    window.executeCode = async function() {
-      await origExecute();
-    };
-    executeCode = window.executeCode;
-  }
-  
-  // Add event listeners
   function initEventListeners() {
-    runButton.addEventListener('click', async () => {
-      await executeCode();
-    });
-    saveCodeBtn.addEventListener('click', () => {
-      saveToLocalStorage();
-    });
+    runButton.addEventListener('click', executeCode);
+    saveCodeBtn.addEventListener('click', saveToLocalStorage);
+    testApiBtn.addEventListener('click', testApiConnection);
     languageSelect.addEventListener('change', () => {
       onLanguageChange(true);
-      saveToLocalStorage();  // auto-save language preference
+      saveToLocalStorage();
     });
     codeEditor.addEventListener('input', (e) => {
       currentCode = e.target.value;
-      // optional autosave but we do on save click, but we could also debounce
     });
   }
   
-  // sync version selector on language change more robust
   function finalInit() {
     loadFromLocalStorage();
     onLanguageChange(false);
     initEventListeners();
     setupTabs();
-    patchOutputStorage();
-    enhanceRun();
-    // initial output dataset
-    outputArea.dataset.infoContent = "⚙️ Ready. Use language dropdown, edit code, then press RUN.";
-    outputArea.dataset.lastOutputRaw = "✨ Editor ready. Write code and execute.";
-    // optional stdin in future (we can extend with input field but not required)
+    testApiConnection(); // Test API on startup
+    outputArea.dataset.infoContent = "⚙️ Ready. Configure your Piston API endpoint or use simulation mode.";
   }
   
   finalInit();
